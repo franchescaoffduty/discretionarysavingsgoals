@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Savings Buckets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0;--surface:#ffffff;--border:rgba(0,0,0,.09);--border-s:rgba(0,0,0,.18);
+  --text:#1a1a1a;--muted:#888;--faint:#bbb;
+  --fill:#c8b89a;--fill-glow:#d4c4a8;--fill-done:#7a9e7e;
+  --tag-bg:#eeedfe;--tag-c:#3c3489;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.5}
+header{padding:2.75rem 2rem 1.25rem;max-width:640px;margin:0 auto;display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+header h1{font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:400;letter-spacing:.04em}
+header h1 span{color:var(--muted);font-weight:300}
+.btn-new{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;padding:7px 16px;border:1px solid var(--border-s);border-radius:6px;background:var(--text);color:#fff;cursor:pointer}
+.btn-new:hover{background:#333}
+.total-bar{max-width:640px;margin:0 auto 1.75rem;padding:0 2rem}
+.total-inner{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.4rem;display:flex;align-items:center;gap:2rem;flex-wrap:wrap}
+.total-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.total-val{font-family:'DM Mono',monospace;font-size:13px;color:var(--text)}
+.total-val span{color:var(--muted);font-size:11px}
+main{max-width:640px;margin:0 auto;padding:0 2rem 4rem;display:flex;flex-direction:column;gap:8px}
+
+/* drag hint */
+.drag-hint{font-family:'DM Mono',monospace;font-size:10px;color:var(--faint);letter-spacing:.06em;text-align:right;margin-bottom:4px;padding:0 2px}
+
+/* bucket row = handle + card */
+.bucket-row{display:flex;align-items:stretch;gap:0;border-radius:12px;transition:opacity .2s}
+.bucket-row.dragging{opacity:.4}
+.bucket-row.drag-over{outline:2px solid var(--fill);outline-offset:1px;border-radius:12px}
+
+.drag-handle{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  width:32px;flex-shrink:0;cursor:grab;border-radius:12px 0 0 12px;
+  background:var(--surface);border:1px solid var(--border);border-right:none;
+  padding:0 8px;transition:background .15s;
+}
+.drag-handle:active{cursor:grabbing}
+.drag-handle:hover{background:#f0eeea}
+.drag-handle .dot{width:3px;height:3px;border-radius:50%;background:var(--faint)}
+.drag-handle:hover .dot{background:var(--muted)}
+
+.bucket{
+  flex:1;background:var(--surface);border:1px solid var(--border);
+  border-radius:0 12px 12px 0;padding:1.1rem 1.35rem 1rem;
+  transition:border-color .15s;cursor:pointer;min-width:0;
+}
+.bucket:hover{border-color:var(--border-s)}
+.bucket.expanded{border-color:var(--border-s);cursor:default}
+
+/* rank badge */
+.bucket-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.6rem;gap:.5rem}
+.header-left{display:flex;align-items:baseline;gap:8px;min-width:0}
+.rank-badge{
+  font-family:'DM Mono',monospace;font-size:10px;font-weight:500;
+  color:var(--muted);background:var(--bg);border:1px solid var(--border);
+  border-radius:20px;padding:1px 7px;flex-shrink:0;letter-spacing:.02em;
+}
+.bucket-name{font-size:14px;font-weight:500;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bucket-cat{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.04em;padding:2px 8px;border-radius:20px;background:var(--tag-bg);color:var(--tag-c);flex-shrink:0;margin-top:2px}
+
+.bar-wrap{position:relative;height:20px;background:var(--bg);border-radius:20px;overflow:hidden;margin:.55rem 0 .2rem}
+.bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--fill),var(--fill-glow));transition:width .5s cubic-bezier(.4,0,.2,1)}
+.bar-fill.done{background:linear-gradient(90deg,var(--fill-done),#a8c5ab)}
+.bar-ticks{position:absolute;inset:0;pointer-events:none;display:flex}
+.tick{flex:1;border-right:1px dashed rgba(0,0,0,.12)}
+.tick:last-child{border-right:none}
+.bar-labels{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:9px;color:var(--faint);margin-top:3px;padding:0 1px}
+.bar-labels .lit{color:var(--fill)}
+.bar-labels .lit-done{color:var(--fill-done)}
+.bucket-amounts{display:flex;align-items:baseline;justify-content:space-between;margin-top:.55rem;gap:6px}
+.amt-saved{font-family:'DM Mono',monospace;font-size:18px;font-weight:300;letter-spacing:-.02em}
+.amt-goal{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.pct-badge{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 9px}
+.pct-badge.done{color:var(--fill-done);border-color:var(--fill-done)}
+
+.bucket-expanded{display:none;margin-top:1rem;border-top:1px solid var(--border);padding-top:1rem}
+.bucket.expanded .bucket-expanded{display:block}
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+.action-group{display:flex;border:1px solid var(--border-s);border-radius:8px;overflow:hidden;background:var(--bg)}
+.action-group input{flex:1;min-width:0;font-family:'DM Mono',monospace;font-size:13px;padding:7px 10px;border:none;background:transparent;color:var(--text);outline:none}
+.action-group input::placeholder{color:var(--faint)}
+.action-btn{font-family:'DM Mono',monospace;font-size:11px;padding:7px 11px;border:none;border-left:1px solid var(--border-s);cursor:pointer;background:transparent;white-space:nowrap}
+.action-btn.add{color:#2d6e4a}.action-btn.add:hover{background:#e8f5ee}
+.action-btn.sub{color:#8a1a1a}.action-btn.sub:hover{background:#fee8e8}
+.log-title{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:.5rem}
+.log-list{max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.log-entry{display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:11px;padding:4px 8px;border-radius:6px;background:var(--bg)}
+.log-date{color:var(--faint);font-size:10px;flex-shrink:0}
+.log-note{flex:1;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-amt{font-weight:500;flex-shrink:0}
+.log-amt.pos{color:#2d6e4a}.log-amt.neg{color:#8a1a1a}
+.log-empty{font-family:'DM Mono',monospace;font-size:11px;color:var(--faint);padding:.5rem 0}
+.bucket-meta-actions{display:flex;align-items:center;gap:6px;margin-top:.75rem}
+.meta-btn{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.04em;padding:4px 10px;border-radius:5px;border:1px solid var(--border-s);background:transparent;color:var(--muted);cursor:pointer}
+.meta-btn:hover{color:var(--text);border-color:var(--text)}
+.meta-btn.danger:hover{color:#8a1a1a;border-color:#f0c0c0;background:#fee8e8}
+.wf-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--faint);margin-left:auto}
+.expand-toggle{display:flex;justify-content:center;margin-top:.9rem}
+.toggle-btn{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.06em;color:var(--muted);border:none;background:transparent;cursor:pointer;padding:2px 0;border-bottom:1px solid transparent}
+.toggle-btn:hover{color:var(--text);border-bottom-color:var(--border-s)}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;align-items:center;justify-content:center;padding:1rem}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border-s);border-radius:14px;padding:1.75rem;width:100%;max-width:440px}
+.modal h2{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;letter-spacing:.07em;margin-bottom:1.4rem}
+.form-row{margin-bottom:.9rem}
+.form-row label{display:block;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.form-row input,.form-row select{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;padding:8px 11px;border:1px solid var(--border-s);border-radius:7px;background:var(--bg);color:var(--text);outline:none}
+.form-row input:focus,.form-row select:focus{border-color:var(--text)}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.9rem}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:1.4rem}
+.btn{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;padding:8px 16px;border-radius:7px;border:1px solid var(--border-s);cursor:pointer;background:transparent;color:var(--muted)}
+.btn:hover{color:var(--text);border-color:var(--text)}
+.btn-primary{background:var(--text);color:#fff;border-color:var(--text)}
+.btn-primary:hover{background:#333;color:#fff}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>savings buckets <span>/ wealthfront</span></h1>
+  <button class="btn-new" id="btn-new">+ new bucket</button>
+</header>
+
+<div class="total-bar">
+  <div class="total-inner">
+    <div><div class="total-label">total saved</div><div class="total-val" id="t-saved">$0</div></div>
+    <div><div class="total-label">total goals</div><div class="total-val" id="t-goal">$0</div></div>
+    <div><div class="total-label">overall</div><div class="total-val" id="t-pct">0% <span>funded</span></div></div>
+  </div>
+</div>
+
+<main id="grid">
+  <div class="drag-hint">drag to reprioritize</div>
+</main>
+
+<div class="overlay" id="bm-overlay">
+  <div class="modal">
+    <h2 id="bm-title">new bucket</h2>
+    <div class="form-row"><label>Name</label><input type="text" id="bm-name" placeholder="e.g. Steam Deck"></div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin:0"><label>Goal ($)</label><input type="number" id="bm-goal" placeholder="400" min="1" step="0.01"></div>
+      <div class="form-row" style="margin:0"><label>Category</label>
+        <select id="bm-cat">
+          <option value="tech">tech</option>
+          <option value="beauty">beauty</option>
+          <option value="concert">concert</option>
+          <option value="event">event / fair</option>
+          <option value="lifestyle">lifestyle</option>
+          <option value="other">other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><label>Wealthfront label (optional)</label><input type="text" id="bm-wf" placeholder="matches label in Wealthfront"></div>
+    <div class="modal-footer">
+      <button class="btn" id="bm-cancel">cancel</button>
+      <button class="btn btn-primary" id="bm-save">save</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="tx-overlay">
+  <div class="modal">
+    <h2 id="tx-title">add funds</h2>
+    <div class="form-row"><label>Amount ($)</label><input type="number" id="tx-amt" placeholder="25.00" min="0.01" step="0.01"></div>
+    <div class="form-row"><label>Note (optional)</label><input type="text" id="tx-note" placeholder="paycheck, birthday money..."></div>
+    <div class="modal-footer">
+      <button class="btn" id="tx-cancel">cancel</button>
+      <button class="btn btn-primary" id="tx-save">confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var STORE = 'sbv4';
+var CAT = {tech:'tech',beauty:'beauty',concert:'concert',event:'event / fair',lifestyle:'lifestyle',other:'other'};
+
+var DEFAULTS = [
+  {id:'b1',name:'Printer',goal:200,cat:'tech',wf:'Printer',saved:0,log:[]},
+  {id:'b2',name:'Steam Deck',goal:400,cat:'tech',wf:'Steam Deck',saved:0,log:[]},
+  {id:'b3',name:'Press-On Nails',goal:80,cat:'beauty',wf:'Press-On Nails',saved:0,log:[]},
+  {id:'b4',name:'Eyeshadow / Cream',goal:60,cat:'beauty',wf:'Eyeshadow',saved:0,log:[]},
+  {id:'b5',name:'Flyleaf Concert',goal:80,cat:'concert',wf:'Flyleaf',saved:0,log:[]},
+  {id:'b6',name:'$uicideboy$ Concert',goal:100,cat:'concert',wf:'Suicideboys',saved:0,log:[]},
+  {id:'b7',name:'Art & Zine Fairs',goal:200,cat:'event',wf:'Art Fairs',saved:0,log:[]}
+];
+
+var state = {data:load(), expanded:null, txId:null, txDir:1, editId:null};
+var dragSrcId = null;
+
+function load() {
+  try { var r = localStorage.getItem(STORE); return r ? JSON.parse(r) : clone(DEFAULTS); }
+  catch(e) { return clone(DEFAULTS); }
+}
+function persist() { localStorage.setItem(STORE, JSON.stringify(state.data)); }
+function clone(x) { return JSON.parse(JSON.stringify(x)); }
+function fmt(n) { return '$' + Math.abs(n).toFixed(2).replace(/\.00$/,''); }
+function fmtDate(iso) { var d=new Date(iso); return (d.getMonth()+1)+'/'+d.getDate(); }
+function pct(b) { return b.goal>0 ? Math.min(100,(b.saved/b.goal)*100) : 0; }
+
+function el(tag,cls,txt) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (txt !== undefined) e.textContent = txt;
+  return e;
+}
+
+function buildRow(b, rank) {
+  var p = pct(b), done = p>=100, isExp = state.expanded===b.id;
+
+  // outer row
+  var row = el('div','bucket-row');
+  row.dataset.bid = b.id;
+  row.draggable = true;
+
+  // handle (6 dots)
+  var handle = el('div','drag-handle');
+  handle.title = 'drag to reorder';
+  for (var i=0;i<6;i++) handle.appendChild(el('div','dot'));
+  row.appendChild(handle);
+
+  // card
+  var card = el('div','bucket'+(isExp?' expanded':''));
+  card.dataset.bid = b.id;
+
+  // header
+  var hdr = el('div','bucket-header');
+  var hl = el('div','header-left');
+  hl.appendChild(el('span','rank-badge','#'+rank));
+  hl.appendChild(el('div','bucket-name',b.name));
+  hdr.appendChild(hl);
+  hdr.appendChild(el('div','bucket-cat',CAT[b.cat]||b.cat));
+  card.appendChild(hdr);
+
+  // bar
+  var bw = el('div','bar-wrap');
+  var bf = el('div','bar-fill'+(done?' done':''));
+  bf.style.width = p+'%';
+  bw.appendChild(bf);
+  var tks = el('div','bar-ticks');
+  for (var j=0;j<4;j++) tks.appendChild(el('div','tick'));
+  bw.appendChild(tks);
+  card.appendChild(bw);
+
+  // bar labels
+  var bl = el('div','bar-labels');
+  ['25%','50%','75%','100%'].forEach(function(lbl,i) {
+    var sp = el('span',null,lbl);
+    var thr = (i+1)*0.25;
+    if (done && i===3) sp.className='lit-done';
+    else if (b.saved >= b.goal*thr) sp.className='lit';
+    bl.appendChild(sp);
+  });
+  card.appendChild(bl);
+
+  // amounts
+  var ar = el('div','bucket-amounts');
+  var al = el('div');
+  al.appendChild(el('span','amt-saved',fmt(b.saved)));
+  al.appendChild(el('span','amt-goal',' of '+fmt(b.goal)));
+  ar.appendChild(al);
+  ar.appendChild(el('div','pct-badge'+(done?' done':''),Math.round(p)+'%'+(done?' \u2713':'')));
+  card.appendChild(ar);
+
+  // expanded
+  var exp = el('div','bucket-expanded');
+
+  var qa = el('div','quick-actions');
+  var ag1 = el('div','action-group');
+  var ai1 = el('input'); ai1.type='number'; ai1.placeholder='amount'; ai1.min='0.01'; ai1.step='0.01'; ai1.dataset.role='add-input';
+  ai1.addEventListener('click',function(e){e.stopPropagation();});
+  var ab1 = el('button','action-btn add','+ add'); ab1.dataset.action='tx-add'; ab1.dataset.bid=b.id;
+  ag1.appendChild(ai1); ag1.appendChild(ab1);
+
+  var ag2 = el('div','action-group');
+  var ai2 = el('input'); ai2.type='number'; ai2.placeholder='amount'; ai2.min='0.01'; ai2.step='0.01'; ai2.dataset.role='sub-input';
+  ai2.addEventListener('click',function(e){e.stopPropagation();});
+  var ab2 = el('button','action-btn sub','\u2212 remove'); ab2.dataset.action='tx-sub'; ab2.dataset.bid=b.id;
+  ag2.appendChild(ai2); ag2.appendChild(ab2);
+
+  qa.appendChild(ag1); qa.appendChild(ag2);
+  exp.appendChild(qa);
+
+  exp.appendChild(el('div','log-title','transaction log'));
+  var ll = el('div','log-list');
+  if (!b.log.length) {
+    ll.appendChild(el('div','log-empty','no transactions yet'));
+  } else {
+    b.log.slice().reverse().forEach(function(t) {
+      var r2 = el('div','log-entry');
+      r2.appendChild(el('span','log-date',fmtDate(t.date)));
+      r2.appendChild(el('span','log-note',t.note||'\u2014'));
+      r2.appendChild(el('span','log-amt '+(t.amt>=0?'pos':'neg'),(t.amt>=0?'+':'-')+fmt(t.amt)));
+      ll.appendChild(r2);
+    });
+  }
+  exp.appendChild(ll);
+
+  var ma = el('div','bucket-meta-actions');
+  var eb = el('button','meta-btn','edit bucket'); eb.dataset.action='edit'; eb.dataset.bid=b.id;
+  var db = el('button','meta-btn danger','delete'); db.dataset.action='delete'; db.dataset.bid=b.id;
+  ma.appendChild(eb); ma.appendChild(db);
+  if (b.wf) ma.appendChild(el('span','wf-label','wf: '+b.wf));
+  exp.appendChild(ma);
+  card.appendChild(exp);
+
+  // expand toggle
+  var tw = el('div','expand-toggle');
+  var tb = el('button','toggle-btn',isExp?'\u2191 collapse':'\u2193 expand');
+  tb.dataset.action='toggle'; tb.dataset.bid=b.id;
+  tw.appendChild(tb);
+  card.appendChild(tw);
+
+  row.appendChild(card);
+
+  // drag events on row
+  row.addEventListener('dragstart', function(e) {
+    dragSrcId = b.id;
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  row.addEventListener('dragend', function() {
+    row.classList.remove('dragging');
+    document.querySelectorAll('.bucket-row').forEach(function(r){ r.classList.remove('drag-over'); });
+  });
+  row.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragSrcId !== b.id) row.classList.add('drag-over');
+  });
+  row.addEventListener('dragleave', function() {
+    row.classList.remove('drag-over');
+  });
+  row.addEventListener('drop', function(e) {
+    e.preventDefault();
+    row.classList.remove('drag-over');
+    if (!dragSrcId || dragSrcId === b.id) return;
+    var srcIdx = state.data.findIndex(function(x){return x.id===dragSrcId;});
+    var dstIdx = state.data.findIndex(function(x){return x.id===b.id;});
+    if (srcIdx<0||dstIdx<0) return;
+    var moved = state.data.splice(srcIdx,1)[0];
+    state.data.splice(dstIdx,0,moved);
+    persist();
+    render();
+  });
+
+  // prevent drag when interacting with expanded area or handle isn't the drag source
+  card.addEventListener('mousedown', function(e) {
+    if (!e.target.closest('.drag-handle')) {
+      row.draggable = false;
+    }
+  });
+  card.addEventListener('mouseup', function() { row.draggable = true; });
+  handle.addEventListener('mousedown', function() { row.draggable = true; });
+
+  return row;
+}
+
+function render() {
+  var grid = document.getElementById('grid');
+  // keep drag hint, remove old rows
+  var hint = grid.querySelector('.drag-hint');
+  grid.innerHTML = '';
+  if (hint) grid.appendChild(hint);
+  state.data.forEach(function(b,i) { grid.appendChild(buildRow(b, i+1)); });
+  var ts=state.data.reduce(function(s,b){return s+b.saved;},0);
+  var tg=state.data.reduce(function(s,b){return s+b.goal;},0);
+  var tp=tg>0?Math.round((ts/tg)*100):0;
+  document.getElementById('t-saved').textContent=fmt(ts);
+  document.getElementById('t-goal').textContent=fmt(tg);
+  document.getElementById('t-pct').innerHTML=tp+'% <span>funded</span>';
+}
+
+// grid event delegation
+document.getElementById('grid').addEventListener('click', function(e) {
+  var t = e.target;
+  var action = t.dataset.action;
+  var bid = t.dataset.bid;
+  if (t.tagName==='INPUT') { e.stopPropagation(); return; }
+
+  if (action==='toggle') { state.expanded=state.expanded===bid?null:bid; render(); return; }
+  if (action==='tx-add'||action==='tx-sub') {
+    e.stopPropagation();
+    var grp=t.closest('.action-group');
+    var pre=grp?grp.querySelector('input').value:'';
+    openTx(bid,action==='tx-add'?1:-1,pre); return;
+  }
+  if (action==='edit') { e.stopPropagation(); openEditBucket(bid); return; }
+  if (action==='delete') { e.stopPropagation(); deleteBucket(bid); return; }
+
+  var card = t.closest('.bucket');
+  if (card && !t.closest('.bucket-expanded')) {
+    state.expanded=state.expanded===card.dataset.bid?null:card.dataset.bid;
+    render();
+  }
+});
+
+// transactions
+function openTx(bid,dir,pre) {
+  state.txId=bid; state.txDir=dir;
+  var b=state.data.find(function(x){return x.id===bid;});
+  document.getElementById('tx-title').textContent=(dir===1?'add funds':'remove funds')+' \u2014 '+b.name;
+  document.getElementById('tx-amt').value=pre||'';
+  document.getElementById('tx-note').value='';
+  document.getElementById('tx-overlay').classList.add('open');
+  setTimeout(function(){document.getElementById('tx-amt').focus();},50);
+}
+function closeTx() { document.getElementById('tx-overlay').classList.remove('open'); state.txId=null; }
+document.getElementById('tx-cancel').addEventListener('click',closeTx);
+document.getElementById('tx-save').addEventListener('click',function() {
+  var raw=parseFloat(document.getElementById('tx-amt').value);
+  if (!raw||raw<=0) { alert('Enter a valid amount.'); return; }
+  var note=document.getElementById('tx-note').value.trim();
+  var amt=parseFloat((raw*state.txDir).toFixed(2));
+  var b=state.data.find(function(x){return x.id===state.txId;});
+  if (!b) return;
+  b.saved=Math.max(0,parseFloat((b.saved+amt).toFixed(2)));
+  b.log.push({date:new Date().toISOString(),amt:amt,note:note});
+  persist(); closeTx(); render();
+});
+document.getElementById('tx-overlay').addEventListener('click',function(e){if(e.target===this)closeTx();});
+
+// bucket modal
+function openNewBucket() {
+  state.editId=null;
+  document.getElementById('bm-title').textContent='new bucket';
+  document.getElementById('bm-name').value='';
+  document.getElementById('bm-goal').value='';
+  document.getElementById('bm-cat').value='other';
+  document.getElementById('bm-wf').value='';
+  document.getElementById('bm-overlay').classList.add('open');
+  setTimeout(function(){document.getElementById('bm-name').focus();},50);
+}
+function openEditBucket(id) {
+  state.editId=id;
+  var b=state.data.find(function(x){return x.id===id;});
+  document.getElementById('bm-title').textContent='edit bucket';
+  document.getElementById('bm-name').value=b.name;
+  document.getElementById('bm-goal').value=b.goal;
+  document.getElementById('bm-cat').value=b.cat;
+  document.getElementById('bm-wf').value=b.wf||'';
+  document.getElementById('bm-overlay').classList.add('open');
+  setTimeout(function(){document.getElementById('bm-name').focus();},50);
+}
+function closeBM() { document.getElementById('bm-overlay').classList.remove('open'); state.editId=null; }
+document.getElementById('bm-cancel').addEventListener('click',closeBM);
+document.getElementById('btn-new').addEventListener('click',openNewBucket);
+document.getElementById('bm-save').addEventListener('click',function() {
+  var name=document.getElementById('bm-name').value.trim();
+  var goal=parseFloat(document.getElementById('bm-goal').value);
+  if (!name||!goal||goal<=0) { alert('Name and a valid goal are required.'); return; }
+  var cat=document.getElementById('bm-cat').value;
+  var wf=document.getElementById('bm-wf').value.trim();
+  if (state.editId) {
+    var b=state.data.find(function(x){return x.id===state.editId;});
+    b.name=name; b.goal=goal; b.cat=cat; b.wf=wf;
+  } else {
+    state.data.push({id:'b'+Date.now(),name:name,goal:goal,cat:cat,wf:wf,saved:0,log:[]});
+  }
+  persist(); closeBM(); render();
+});
+document.getElementById('bm-overlay').addEventListener('click',function(e){if(e.target===this)closeBM();});
+
+function deleteBucket(id) {
+  if (!confirm('Delete this bucket and all its history? This cannot be undone.')) return;
+  state.data=state.data.filter(function(x){return x.id!==id;});
+  if (state.expanded===id) state.expanded=null;
+  persist(); render();
+}
+
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeBM();closeTx();}});
+
+render();
+</script>
+</body>
+</html>
