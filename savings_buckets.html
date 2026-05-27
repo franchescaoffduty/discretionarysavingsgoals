@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Savings Buckets</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #F5F0E8;
+  --surface: #FDFAF5;
+  --surface2: #F0EBE0;
+  --border: rgba(26,22,18,0.12);
+  --border-hover: rgba(26,22,18,0.25);
+  --text: #1A1612;
+  --text-soft: #4A3F35;
+  --text-muted: #8A7E74;
+  --accent: #C84B31;
+  --accent-dim: rgba(200,75,49,0.08);
+  --green: #2D6A4F;
+  --green-dim: rgba(45,106,79,0.08);
+  --red: #C84B31;
+  --red-dim: rgba(200,75,49,0.08);
+  --blue: #2D6A4F;
+  --radius: 4px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  padding: 40px 20px 80px;
+}
+
+
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header */
+.header {
+  margin-bottom: 48px;
+  animation: fadeDown 0.5s ease both;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.title {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+.title em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+
+/* Discretionary panel */
+.disc-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  margin-bottom: 32px;
+  animation: fadeDown 0.5s 0.05s ease both;
+  position: relative;
+  overflow: hidden;
+}
+
+.disc-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: #1A1612;
+}
+
+.disc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.disc-stat label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.disc-stat .val {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.disc-stat .val.positive { color: #2D6A4F; }
+.disc-stat .val.warning { color: #D4A843; }
+.disc-stat .val.negative { color: #C84B31; }
+
+.disc-bar-wrap {
+  height: 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.disc-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: #2D6A4F;
+  transition: width 0.4s cubic-bezier(0.16,1,0.3,1), background 0.3s;
+}
+
+.disc-bar.warn { background: #D4A843; }
+.disc-bar.over { background: #C84B31; }
+
+.disc-note {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.disc-budget-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.disc-budget-row label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.disc-budget-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  padding: 6px 10px;
+  width: 120px;
+  transition: border-color 0.15s;
+}
+
+.disc-budget-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Month selector */
+.month-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  animation: fadeDown 0.5s 0.1s ease both;
+  flex-wrap: wrap;
+}
+
+.month-label {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.month-select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.month-select:focus { outline: none; border-color: var(--accent); }
+
+.btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 7px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  color: var(--text-soft);
+}
+
+.btn:hover { border-color: var(--border-hover); color: var(--text); }
+
+.btn-accent {
+  background: #1A1612;
+  border-color: #1A1612;
+  color: #F5F0E8;
+  font-weight: 500;
+}
+
+.btn-accent:hover { background: #4A3F35; border-color: #4A3F35; color: #F5F0E8; }
+
+.btn-sm {
+  font-size: 10px;
+  padding: 5px 10px;
+}
+
+.btn-danger { color: #C84B31; border-color: transparent; }
+.btn-danger:hover { border-color: #C84B31; background: rgba(200,75,49,0.08); }
+
+/* Section header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  animation: fadeDown 0.5s 0.15s ease both;
+}
+
+.section-title {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Bucket cards */
+.buckets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.bucket {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.15s;
+  animation: fadeUp 0.4s ease both;
+}
+
+.bucket:hover { border-color: var(--border-hover); }
+.bucket.active { border-color: rgba(26,22,18,0.4); }
+
+.bucket-main {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+}
+
+.bucket-toggle {
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
+  border: 1.5px solid var(--border-hover);
+  background: transparent;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+
+.bucket.active .bucket-toggle {
+  background: #1A1612;
+  border-color: #1A1612;
+}
+
+.bucket-toggle::after {
+  content: '✓';
+  font-size: 11px;
+  color: #0E0E0E;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.bucket.active .bucket-toggle::after { opacity: 1; color: #F5F0E8; }
+
+.bucket-info { flex: 1; min-width: 0; }
+
+.bucket-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bucket-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bucket-tag {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 2px;
+  background: var(--surface2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.bucket-progress-wrap {
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 80px;
+}
+
+.bucket-pct {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.2rem;
+  color: var(--text-soft);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.bucket.active .bucket-pct { color: #1A1612; font-weight: 600; }
+
+.mini-bar-wrap {
+  height: 3px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  width: 80px;
+  overflow: hidden;
+}
+
+.mini-bar {
+  height: 100%;
+  background: var(--text-muted);
+  border-radius: 2px;
+  transition: width 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+
+.bucket.active .mini-bar { background: #1A1612; }
+
+/* Expanded allocation */
+.bucket-expanded {
+  border-top: 1px solid var(--border);
+  padding: 16px 20px;
+  background: var(--surface2);
+  display: none;
+}
+
+.bucket.active .bucket-expanded { display: block; }
+
+.alloc-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.alloc-label {
+  font-size: 11px;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.alloc-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  padding: 6px 10px;
+  width: 110px;
+  transition: border-color 0.15s;
+}
+
+.alloc-input:focus { outline: none; border-color: var(--accent); }
+
+.alloc-remaining {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.alloc-remaining .r-val { color: #2D6A4F; font-weight: 500; }
+.alloc-remaining .r-val.done { color: #C84B31; }
+
+.bucket-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* Edit bucket form inline */
+.bucket-edit-form {
+  border-top: 1px solid var(--border);
+  padding: 16px 20px;
+  background: var(--surface2);
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bucket-edit-form.open { display: flex; }
+
+.form-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.form-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 7px 12px;
+  transition: border-color 0.15s;
+  flex: 1;
+  min-width: 120px;
+}
+
+.form-input:focus { outline: none; border-color: var(--accent); }
+
+.form-input::placeholder { color: var(--text-muted); }
+
+/* Add bucket form */
+.add-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 32px;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeUp 0.3s ease both;
+}
+
+.add-form.open { display: flex; }
+
+.add-form-title {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+/* Monthly summary */
+.summary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  animation: fadeDown 0.5s 0.2s ease both;
+}
+
+.summary-title {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 16px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dotted rgba(255,255,255,0.05);
+  font-size: 12px;
+}
+
+.summary-item:last-child { border-bottom: none; }
+.summary-item .name { color: var(--text-soft); }
+.summary-item .amount { color: #1A1612; font-weight: 500; }
+
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.summary-total .label {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.summary-total .amount {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+}
+
+.summary-total .amount.positive { color: #2D6A4F; }
+.summary-total .amount.warning { color: #D4A843; }
+.summary-total .amount.negative { color: #C84B31; }
+
+.empty-state {
+  text-align: center;
+  padding: 32px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius);
+  padding: 28px;
+  width: 100%;
+  max-width: 400px;
+  animation: fadeUp 0.25s ease both;
+}
+
+.modal-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+  .disc-grid { grid-template-columns: 1fr 1fr; }
+  .bucket-main { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <h1 class="title">savings <em>buckets</em></h1>
+        <p class="subtitle">monthly allocation planner</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Discretionary panel -->
+  <div class="disc-panel">
+    <div class="disc-grid">
+      <div class="disc-stat">
+        <label>Monthly discretionary</label>
+        <div class="val" id="base-display">$812.70</div>
+      </div>
+      <div class="disc-stat">
+        <label>Allocated to buckets</label>
+        <div class="val warning" id="allocated-display">$0.00</div>
+      </div>
+      <div class="disc-stat">
+        <label>Remaining to spend</label>
+        <div class="val positive" id="remaining-display">$812.70</div>
+      </div>
+    </div>
+    <div class="disc-bar-wrap">
+      <div class="disc-bar" id="disc-bar" style="width:0%"></div>
+    </div>
+    <div class="disc-note" id="disc-note">$812.70 available for free spending</div>
+    <div class="disc-budget-row">
+      <label>Edit base discretionary →</label>
+      <input type="number" class="disc-budget-input" id="base-input" value="812.70" step="0.01">
+      <button class="btn btn-sm" onclick="updateBase()">update</button>
+    </div>
+  </div>
+
+  <!-- Month selector -->
+  <div class="month-row">
+    <span class="month-label">Viewing month:</span>
+    <select class="month-select" id="month-select" onchange="switchMonth()">
+      <option value="2026-06">June 2026</option>
+      <option value="2026-07">July 2026</option>
+      <option value="2026-08">August 2026</option>
+      <option value="2026-09">September 2026</option>
+      <option value="2026-10">October 2026</option>
+      <option value="2026-11">November 2026</option>
+      <option value="2026-12">December 2026</option>
+    </select>
+    <button class="btn btn-sm" onclick="clearMonth()">clear month</button>
+  </div>
+
+  <!-- Buckets -->
+  <div class="section-header">
+    <span class="section-title">Buckets</span>
+    <button class="btn btn-accent btn-sm" onclick="toggleAddForm()">+ add bucket</button>
+  </div>
+
+  <!-- Add form -->
+  <div class="add-form" id="add-form">
+    <div class="add-form-title">New bucket</div>
+    <div class="form-row">
+      <input type="text" class="form-input" id="new-name" placeholder="bucket name">
+      <input type="text" class="form-input" id="new-tag" placeholder="tag (beauty, tech…)" style="max-width:160px">
+    </div>
+    <div class="form-row">
+      <input type="number" class="form-input" id="new-goal" placeholder="goal amount ($)" style="max-width:160px">
+      <input type="number" class="form-input" id="new-saved" placeholder="already saved ($)" style="max-width:160px">
+    </div>
+    <div class="form-row">
+      <button class="btn btn-accent btn-sm" onclick="addBucket()">save bucket</button>
+      <button class="btn btn-sm" onclick="toggleAddForm()">cancel</button>
+    </div>
+  </div>
+
+  <div class="buckets" id="buckets-list"></div>
+
+  <!-- Monthly summary -->
+  <div class="summary">
+    <div class="summary-title" id="summary-title">June 2026 — allocation plan</div>
+    <div class="summary-list" id="summary-list">
+      <div class="empty-state">No buckets selected for this month yet.<br>Toggle a bucket above to allocate funds.</div>
+    </div>
+    <div class="summary-total">
+      <span class="label">Left for free spending</span>
+      <span class="amount positive" id="summary-remaining">$812.70</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Edit modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">Edit bucket</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input type="hidden" id="edit-id">
+      <input type="text" class="form-input" id="edit-name" placeholder="bucket name">
+      <input type="text" class="form-input" id="edit-tag" placeholder="tag">
+      <div class="form-row">
+        <input type="number" class="form-input" id="edit-goal" placeholder="goal ($)">
+        <input type="number" class="form-input" id="edit-saved" placeholder="total saved so far ($)">
+      </div>
+    </div>
+    <div class="modal-actions" id="modal-actions-main">
+      <button class="btn btn-sm btn-danger" onclick="showDeleteConfirm()">delete</button>
+      <button class="btn btn-sm" onclick="closeEditModal()">cancel</button>
+      <button class="btn btn-sm btn-accent" onclick="saveEdit()">save</button>
+    </div>
+    <div id="modal-actions-confirm" style="display:none; background:var(--red-dim); border-radius:var(--radius); padding:10px 12px; margin-top:8px;">
+      <div style="font-size:12px; color:var(--red); margin-bottom:8px;">Are you sure? This cannot be undone.</div>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button class="btn btn-sm" onclick="hideDeleteConfirm()">cancel</button>
+        <button class="btn btn-sm" style="border-color:var(--red); background:var(--red); color:#fff;" onclick="deleteBucket()">yes, delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = 'savings_buckets_v2';
+
+function getState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return {
+    base: 812.70,
+    currentMonth: '2026-06',
+    buckets: [
+      { id: 'b1', name: 'Tagalog Class', tag: 'other', goal: 399, saved: 0 },
+      { id: 'b2', name: 'Printer', tag: 'tech', goal: 200, saved: 0 },
+      { id: 'b3', name: 'Eyeshadow / Cream', tag: 'beauty', goal: 60, saved: 0 },
+      { id: 'b4', name: 'Steam Deck', tag: 'tech', goal: 400, saved: 0 },
+      { id: 'b5', name: 'Press-On Nails', tag: 'beauty', goal: 80, saved: 0 },
+    ],
+    // monthAllocations: { 'YYYY-MM': { bucketId: amount } }
+    monthAllocations: {},
+    // monthActive: { 'YYYY-MM': [bucketId, ...] }
+    monthActive: {}
+  };
+}
+
+function saveState(state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+let state = getState();
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function fmt(n) {
+  return '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function uid() {
+  return 'b' + Date.now() + Math.random().toString(36).slice(2,6);
+}
+
+function monthLabel(key) {
+  const [y, m] = key.split('-');
+  return new Date(+y, +m - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function getCurrentAllocations() {
+  const mo = state.currentMonth;
+  if (!state.monthAllocations[mo]) state.monthAllocations[mo] = {};
+  return state.monthAllocations[mo];
+}
+
+function getCurrentActive() {
+  const mo = state.currentMonth;
+  if (!state.monthActive[mo]) state.monthActive[mo] = [];
+  return state.monthActive[mo];
+}
+
+function getTotalAllocated() {
+  const allocs = getCurrentAllocations();
+  return Object.values(allocs).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+}
+
+function getBucketMonthlyTotal(bucketId) {
+  // sum all past months' allocations for this bucket
+  let total = 0;
+  for (const mo in state.monthAllocations) {
+    total += parseFloat(state.monthAllocations[mo][bucketId] || 0);
+  }
+  return total;
+}
+
+function getBucketTotalSaved(bucket) {
+  return (parseFloat(bucket.saved) || 0) + getBucketMonthlyTotal(bucket.id);
+}
+
+// ─── Render ──────────────────────────────────────────────────────────────────
+
+function render() {
+  renderDiscPanel();
+  renderBuckets();
+  renderSummary();
+  // sync month select
+  document.getElementById('month-select').value = state.currentMonth;
+}
+
+function renderDiscPanel() {
+  const allocated = getTotalAllocated();
+  const remaining = state.base - allocated;
+  const pct = Math.min((allocated / state.base) * 100, 100);
+
+  document.getElementById('base-display').textContent = fmt(state.base);
+  document.getElementById('allocated-display').textContent = fmt(allocated);
+  document.getElementById('base-input').value = state.base;
+
+  const remEl = document.getElementById('remaining-display');
+  remEl.textContent = fmt(remaining);
+  remEl.className = 'val ' + (remaining < 0 ? 'negative' : remaining < state.base * 0.2 ? 'warning' : 'positive');
+
+  const bar = document.getElementById('disc-bar');
+  bar.style.width = pct + '%';
+  bar.className = 'disc-bar' + (remaining < 0 ? ' over' : remaining < state.base * 0.2 ? ' warn' : '');
+
+  const note = document.getElementById('disc-note');
+  if (remaining < 0) {
+    note.textContent = `Over budget by ${fmt(Math.abs(remaining))} — reduce some allocations`;
+    note.style.color = 'var(--red)';
+  } else {
+    note.textContent = `${fmt(remaining)} available for free spending this month`;
+    note.style.color = 'var(--text-muted)';
+  }
+}
+
+function renderBuckets() {
+  const list = document.getElementById('buckets-list');
+  const active = getCurrentActive();
+  const allocs = getCurrentAllocations();
+
+  if (state.buckets.length === 0) {
+    list.innerHTML = '<div class="empty-state">No buckets yet. Add one above!</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  state.buckets.forEach((b, i) => {
+    const isActive = active.includes(b.id);
+    const totalSaved = getBucketTotalSaved(b);
+    const pct = Math.min((totalSaved / b.goal) * 100, 100);
+    const remaining = Math.max(b.goal - totalSaved, 0);
+    const monthAlloc = parseFloat(allocs[b.id] || 0);
+
+    const div = document.createElement('div');
+    div.className = 'bucket' + (isActive ? ' active' : '');
+    div.dataset.id = b.id;
+    div.style.animationDelay = (i * 0.04) + 's';
+
+    div.innerHTML = `
+      <div class="bucket-main" onclick="toggleBucket('${b.id}')">
+        <div class="bucket-toggle"></div>
+        <div class="bucket-info">
+          <div class="bucket-name">${b.name}</div>
+          <div class="bucket-meta">
+            <span>${fmt(totalSaved)} of ${fmt(b.goal)}</span>
+            ${remaining > 0 ? `<span style="color:var(--text-muted)">${fmt(remaining)} left</span>` : '<span style="color:var(--green)">✓ complete</span>'}
+            ${b.tag ? `<span class="bucket-tag">${b.tag}</span>` : ''}
+          </div>
+        </div>
+        <div class="bucket-progress-wrap">
+          <div class="bucket-pct">${Math.round(pct)}%</div>
+          <div class="mini-bar-wrap">
+            <div class="mini-bar" style="width:${pct}%"></div>
+          </div>
+        </div>
+        <button class="btn btn-sm" style="flex-shrink:0" onclick="event.stopPropagation(); openEditModal('${b.id}')">edit</button>
+      </div>
+      <div class="bucket-expanded">
+        <div class="alloc-row">
+          <span class="alloc-label">Allocate this month:</span>
+          <input type="number" class="alloc-input" value="${monthAlloc || ''}" placeholder="$0.00"
+            min="0" max="${remaining}"
+            oninput="updateAlloc('${b.id}', this.value)"
+            onclick="event.stopPropagation()">
+          <span class="alloc-remaining">
+            remaining toward goal: <span class="r-val ${remaining <= 0 ? 'done' : ''}">${remaining <= 0 ? 'funded!' : fmt(remaining)}</span>
+          </span>
+        </div>
+      </div>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+function renderSummary() {
+  const active = getCurrentActive();
+  const allocs = getCurrentAllocations();
+  const allocated = getTotalAllocated();
+  const remaining = state.base - allocated;
+
+  document.getElementById('summary-title').textContent = monthLabel(state.currentMonth) + ' — allocation plan';
+
+  const list = document.getElementById('summary-list');
+  const activeBuckets = state.buckets.filter(b => active.includes(b.id) && parseFloat(allocs[b.id] || 0) > 0);
+
+  if (activeBuckets.length === 0) {
+    list.innerHTML = '<div class="empty-state">No buckets selected for this month yet.<br>Toggle a bucket above to allocate funds.</div>';
+  } else {
+    list.innerHTML = activeBuckets.map(b => `
+      <div class="summary-item">
+        <span class="name">${b.name} <span style="font-size:10px;color:var(--text-muted);margin-left:4px">${b.tag || ''}</span></span>
+        <span class="amount">${fmt(parseFloat(allocs[b.id] || 0))}</span>
+      </div>
+    `).join('');
+  }
+
+  const remEl = document.getElementById('summary-remaining');
+  remEl.textContent = fmt(remaining);
+  remEl.className = 'amount ' + (remaining < 0 ? 'negative' : remaining < state.base * 0.2 ? 'warning' : 'positive');
+}
+
+// ─── Actions ─────────────────────────────────────────────────────────────────
+
+function toggleBucket(id) {
+  const active = getCurrentActive();
+  const idx = active.indexOf(id);
+  if (idx === -1) {
+    active.push(id);
+  } else {
+    active.splice(idx, 1);
+    // clear allocation when deactivated
+    const allocs = getCurrentAllocations();
+    delete allocs[id];
+  }
+  state.monthActive[state.currentMonth] = active;
+  saveState(state);
+  render();
+}
+
+function updateAlloc(id, val) {
+  const allocs = getCurrentAllocations();
+  const n = parseFloat(val) || 0;
+  if (n <= 0) delete allocs[id];
+  else allocs[id] = n;
+  state.monthAllocations[state.currentMonth] = allocs;
+  saveState(state);
+  renderDiscPanel();
+  renderSummary();
+}
+
+function updateBase() {
+  const val = parseFloat(document.getElementById('base-input').value);
+  if (!isNaN(val) && val >= 0) {
+    state.base = val;
+    saveState(state);
+    render();
+  }
+}
+
+function switchMonth() {
+  state.currentMonth = document.getElementById('month-select').value;
+  saveState(state);
+  render();
+}
+
+function clearMonth() {
+  if (!confirm('Clear all allocations for ' + monthLabel(state.currentMonth) + '?')) return;
+  delete state.monthAllocations[state.currentMonth];
+  delete state.monthActive[state.currentMonth];
+  saveState(state);
+  render();
+}
+
+function toggleAddForm() {
+  const f = document.getElementById('add-form');
+  f.classList.toggle('open');
+  if (f.classList.contains('open')) {
+    document.getElementById('new-name').focus();
+  }
+}
+
+function addBucket() {
+  const name = document.getElementById('new-name').value.trim();
+  const tag = document.getElementById('new-tag').value.trim();
+  const goal = parseFloat(document.getElementById('new-goal').value) || 0;
+  const saved = parseFloat(document.getElementById('new-saved').value) || 0;
+
+  if (!name || goal <= 0) {
+    alert('Please enter a name and goal amount.');
+    return;
+  }
+
+  state.buckets.push({ id: uid(), name, tag, goal, saved });
+  saveState(state);
+
+  // reset form
+  ['new-name','new-tag','new-goal','new-saved'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('add-form').classList.remove('open');
+  render();
+}
+
+function openEditModal(id) {
+  const b = state.buckets.find(x => x.id === id);
+  if (!b) return;
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-name').value = b.name;
+  document.getElementById('edit-tag').value = b.tag || '';
+  document.getElementById('edit-goal').value = b.goal;
+  document.getElementById('edit-saved').value = b.saved || 0;
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  hideDeleteConfirm();
+}
+
+function saveEdit() {
+  const id = document.getElementById('edit-id').value;
+  const b = state.buckets.find(x => x.id === id);
+  if (!b) return;
+  b.name = document.getElementById('edit-name').value.trim() || b.name;
+  b.tag = document.getElementById('edit-tag').value.trim();
+  b.goal = parseFloat(document.getElementById('edit-goal').value) || b.goal;
+  b.saved = parseFloat(document.getElementById('edit-saved').value) || 0;
+  saveState(state);
+  closeEditModal();
+  render();
+}
+
+function showDeleteConfirm() {
+  document.getElementById('modal-actions-confirm').style.display = 'block';
+}
+
+function hideDeleteConfirm() {
+  document.getElementById('modal-actions-confirm').style.display = 'none';
+}
+
+function deleteBucket() {
+  const id = document.getElementById('edit-id').value;
+  state.buckets = state.buckets.filter(x => x.id !== id);
+  // clean up allocations
+  for (const mo in state.monthAllocations) delete state.monthAllocations[mo][id];
+  for (const mo in state.monthActive) {
+    state.monthActive[mo] = state.monthActive[mo].filter(x => x !== id);
+  }
+  saveState(state);
+  closeEditModal();
+  render();
+}
+
+// Close modal on overlay click
+document.getElementById('edit-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
